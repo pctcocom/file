@@ -1,5 +1,5 @@
 <?php
-namespace Pctco\Date;
+namespace Pctco\File;
 /**
  * 数据
  */
