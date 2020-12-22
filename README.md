@@ -2,52 +2,44 @@
 
 ## Script
 ```
-use Pctco\File\Script\Minfy;
+/entrance/static/config.json;
+
+{
+   "cache" : true, // 重新生成所有脚本文件
+   "name": {
+      "index": "index",
+      "admin": "admin-stop"
+   },
+   "library": {
+      "frame": {
+         "jquery": "3.5.1", //生成单个版本
+         "bootstrap": [ //生成多个版本
+            "3.3.5-stop", // 停止制造 如果 cache == true , stop 则无效
+            "3.3.6"
+         ]
+      }
+   }
+}
+```
+
+```
+use Pctco\File\Script\Format;
+
 /**
-* @name scandir
-* @describe 自动压缩目录脚本
-* @param mixed $dir 脚本目录
-* @param mixed $run 脚本运行目录
-* @return Array [path=>'脚本路径']
+* 制作css、less、js脚本文件
+* @param array $initialize  载入config $initialize
+* @return
 **/
-
-Minfy::scandir(
-   'static/client/default/#####/'.Config::get('all.client').DS,
-   '/static/run/'
-);
-$this->assign('path',$scandir['path']);
+Format::making($initialize)
 ```
 
 ```
-use Pctco\File\Script\Js;
-
 /**
-* 合并 .JS 文件 并且保存一个新.js文件
+* 压缩多个脚本
 * @param array   $arr  文件数组
-* @param mixed   $filePath   文件路劲
-* @param mixed   $SaveName   合并文件保存路劲和文件名称
-* @access
+* @param mixed   $path   文件路劲
+* @param mixed   $save   保存文件名称
+* @return String
 **/
-Js::minfy(
-   ['c/body','p/common'],
-   '/static/'.Config::get('all.tpl').'/script/',
-   '/static/run/'.Config::get('all.client').Config::get('all.tpl')
-);
-```
-
-```
-use Pctco\File\Script\Css;
-
-/**
-* 合并 .CSS 文件 并且保存一个新.css文件
-* @param array   $arr  文件数组
-* @param mixed   $filePath   文件路劲
-* @param mixed   $savePath   合并文件保存路劲和文件名称
-**/
-
-Css::minfy(
-   ['c/body','p/common'],
-   '/static/'.Config::get('all.tpl').'/less/',
-   '/static/run/'.Config::get('all.client').Config::get('all.tpl').css|less
-);
+Format::Compression(arr,path,$save);
 ```

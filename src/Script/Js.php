@@ -58,33 +58,6 @@ class Js {
   protected $lookAhead   = null;
   protected $output      = '';
 
-  // -- Public Static Methods --------------------------------------------------
-  /**
-  * 合并 .JS 文件 并且保存一个新.js文件
-  * @param array   $arr  文件数组
-  * @param mixed   $filePath   文件路劲
-  * @param mixed   $SaveName   合并文件保存路劲和文件名称
-  * @access
-  **/
-  public static function minfy($arr,$filePath,$SaveName) {
-      $js = '';
-      if (!empty($arr)) {
-         foreach ($arr as $v) {
-            if(preg_match("/^http(s)?:\\/\\/.+/",$v)){
-                $js .= file_get_contents($v.'.js?v='.time());
-            }else{
-                $js .= file_get_contents('.'.$filePath.$v.'.js');
-            }
-
-         }
-         $jsmin = new Js($js);
-         file_put_contents(getcwd().$SaveName.'.js',$jsmin->min());
-      }else{
-         file_put_contents(getcwd().$SaveName.'.js',$js);
-      }
-
-  }
-
   // -- Public Instance Methods ------------------------------------------------
 
   public function __construct($input) {
@@ -181,7 +154,7 @@ class Js {
     return ord($c) > 126 || $c === '\\' || preg_match('/^[\w\$]$/', $c) === 1;
   }
 
-  protected function min() {
+  public function min() {
     $this->a = "\n";
     $this->action(3);
 
