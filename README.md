@@ -30,7 +30,8 @@ use Pctco\File\Script\Format;
 * @param array $initialize  载入config $initialize
 * @return
 **/
-Format::making($initialize)
+$format = new Format($initialize);
+$format->making();
 ```
 
 ```
@@ -41,5 +42,6 @@ Format::making($initialize)
 * @param mixed   $save   保存文件名称
 * @return String
 **/
-Format::Compression(arr,path,$save);
+$format = new Format($initialize);
+$format->compression(arr,path,$save);
 ```

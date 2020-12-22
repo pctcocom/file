@@ -2,20 +2,23 @@
 namespace Pctco\File\Script;
 use think\facade\Cache;
 class Format{
+   private $initialize;
+   function __construct($initialize){
+      $this->initialize = $initialize['initialize'];
+   }
    /**
    * 制作css、less、js脚本文件
    * @param array $initialize  载入config $initialize
    * @return
    **/
-   public static function making($initialize){
-      $initialize = $initialize['initialize'];
-      if ($initialize['env']['APP_DEBUG']) {
+   public function making(){
+      if ($this->initialize['env']['APP_DEBUG']) {
          // Get Config.json
-         $config = json_decode(file_get_contents($initialize['resources']['static']['config']),true);
-         $root = $initialize['resources']['path']['root'];
+         $config = json_decode(file_get_contents($this->initialize['resources']['static']['config']),true);
+         $root = $this->initialize['resources']['path']['root'];
 
-         $path = $initialize['resources']['path']['static'];
-         $remoteDomain = $initialize['remote']['domain'].DIRECTORY_SEPARATOR.'static';
+         $path = $this->initialize['resources']['path']['static'];
+         $remoteDomain = $this->initialize['remote']['domain'].DIRECTORY_SEPARATOR.'static';
 
          $index = $library = [
             'js'   =>   [],
@@ -30,8 +33,8 @@ class Format{
                case $k1 == 'index' || $k1 == 'admin':
                   if (strrchr($config['name'][$k1],'-') != '-stop') {
                      foreach ($v1 as $k2 => $v2) {
-                        foreach ($v2[$initialize['client']['type']] as $k3 => $v3) {
-                           $files = $k2.DIRECTORY_SEPARATOR.$initialize['client']['type'].DIRECTORY_SEPARATOR.'compress'.DIRECTORY_SEPARATOR.$v3;
+                        foreach ($v2[$this->initialize['client']['type']] as $k3 => $v3) {
+                           $files = $k2.DIRECTORY_SEPARATOR.$this->initialize['client']['type'].DIRECTORY_SEPARATOR.'compress'.DIRECTORY_SEPARATOR.$v3;
                            if(strrchr($v3,'.') === '.folder'){ // The local folder
                               foreach (scandir($root.$path.DIRECTORY_SEPARATOR.$files) as $folder) {
                                  $ext = preg_replace('/./','',strrchr($folder,'.'),1);
@@ -45,7 +48,8 @@ class Format{
                               $index[$k2][] = $remoteDomain.DIRECTORY_SEPARATOR.$v3.'.'.$k2;
                            }
                         }
-                        $script[$k1][$k2] = Format::Compression($index[$k2],$root.$path,md5($initialize['client']['type'].$config['name'][$k1]).'.'.$k2);
+                        $script[$k1][$k2] =
+                        $this->compression($index[$k2],$root.$path,md5($this->initialize['client']['type'].$config['name'][$k1]).'.'.$k2);
                      }
                   }
                   break;
@@ -88,20 +92,20 @@ class Format{
                   }
                   foreach ($arr as $nv => $t) {
                      foreach ($t as $suffix => $array) {
-                        $script[$k1][$nv][$suffix] = Format::Compression($array,$root.$path,md5($nv).'.'.$suffix);
+                        $script[$k1][$nv][$suffix] = $this->compression($array,$root.$path,md5($nv).'.'.$suffix);
                      }
                   }
                   break;
             }
          }
          if ($config['cache']) {
-            Cache::set('script',$script);
+            Cache::store('config')->set('script',$script);
          }else{
-            return Cache::get('script');
+            return Cache::store('config')->get('script');
          }
          return $script;
       }
-      return Cache::get('script');
+      return Cache::store('config')->get('script');
    }
    /**
    * 压缩多个脚本
@@ -110,7 +114,7 @@ class Format{
    * @param mixed   $save   保存文件名称
    * @return String
    **/
-   public static function Compression($arr,$path,$save){
+   public function compression($arr,$path,$save){
       $script = '';
       if (!empty($arr)) {
          foreach ($arr as $v) {
