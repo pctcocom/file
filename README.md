@@ -1,5 +1,6 @@
 # file
 
+## Script
 ```
 use Pctco\File\Script\Minfy;
 /**
