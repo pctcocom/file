@@ -27,7 +27,7 @@ class Format{
          ];
 
          $script = [];
-
+         $theme = 'theme'.DIRECTORY_SEPARATOR.$this->initialize['template']['theme'].DIRECTORY_SEPARATOR;
          foreach ($config as $k1 => $v1) {
             switch ($k1) {
                case $k1 == 'index' || $k1 == 'admin':
@@ -36,18 +36,19 @@ class Format{
                         foreach ($v2[$this->initialize['client']['type']] as $k3 => $v3) {
                            $files = $k2.DIRECTORY_SEPARATOR.$this->initialize['client']['type'].DIRECTORY_SEPARATOR.'compress'.DIRECTORY_SEPARATOR.$v3;
                            if(strrchr($v3,'.') === '.folder'){ // The local folder
-                              foreach (scandir($root.$path.DIRECTORY_SEPARATOR.$files) as $folder) {
+                              foreach (scandir($root.$path.DIRECTORY_SEPARATOR.$theme.DIRECTORY_SEPARATOR.$files) as $folder) {
                                  $ext = preg_replace('/./','',strrchr($folder,'.'),1);
                                  if (in_array($ext,array_keys($index))) {
-                                    $index[$ext][] = $files.DIRECTORY_SEPARATOR.$folder;
+                                    $index[$ext][] = $theme.$files.DIRECTORY_SEPARATOR.$folder;
                                  }
                               }
                            }else if(strpos($v3,'/') === false){ // The local file
-                              $index[$k2][] = $files.'.'.$k2;
+                              $index[$k2][] = $theme.$files.'.'.$k2;
                            }else{ // The remote file
-                              $index[$k2][] = $remoteDomain.DIRECTORY_SEPARATOR.$v3.'.'.$k2;
+                              $index[$k2][] = $remoteDomain.$v3.'.'.$k2;
                            }
                         }
+                        dump($index[$k2]);
                         $script[$k1][$k2] =
                         $this->compression($index[$k2],$root.$path,md5($this->initialize['client']['type'].$config['name'][$k1]).'.'.$k2);
                      }
@@ -139,7 +140,7 @@ class Format{
             $script = $JsMin->min();
          }
          file_put_contents($path.DIRECTORY_SEPARATOR.'compression'.DIRECTORY_SEPARATOR.$save,trim($script));
-         return DIRECTORY_SEPARATOR.'static'.DIRECTORY_SEPARATOR.'compression'.DIRECTORY_SEPARATOR.$save;
+         return DIRECTORY_SEPARATOR.'static'.DIRECTORY_SEPARATOR.'compression'.DIRECTORY_SEPARATOR.$save.'?'.time();
       }
    }
 }
