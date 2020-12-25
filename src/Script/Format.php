@@ -48,7 +48,6 @@ class Format{
                               $index[$k2][] = $remoteDomain.$v3.'.'.$k2;
                            }
                         }
-                        dump($index[$k2]);
                         $script[$k1][$k2] =
                         $this->compression($index[$k2],$root.$path,md5($this->initialize['client']['type'].$config['name'][$k1]).'.'.$k2);
                      }
