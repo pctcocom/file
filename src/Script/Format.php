@@ -69,7 +69,7 @@ class Format{
                                  foreach (scandir($folder) as $files) {
                                     $ext = preg_replace('/./','',strrchr($files,'.'),1);
                                     if (in_array($ext,array_keys($library))) {
-                                       $arr[$name.'-'.$vv][$ext][] = $relative.$files;
+                                       $arr[$name.'-'.str_replace('.','',$vv)][$ext][] = $relative.$files;
                                     }
                                  }
                               }
@@ -83,7 +83,7 @@ class Format{
                               foreach (scandir($folder) as $files) {
                                  $ext = preg_replace('/./','',strrchr($files,'.'),1);
                                  if (in_array($ext,array_keys($library))) {
-                                    $arr[$name.'-'.$version][$ext][] = $relative.$files;
+                                    $arr[$name.'-'.str_replace('.','',$version)][$ext][] = $relative.$files;
                                  }
                               }
                            }
