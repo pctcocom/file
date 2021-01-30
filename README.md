@@ -6,6 +6,7 @@
 
 {
    "cache" : true, // 重新生成所有脚本文件
+   "sorting" : true, // 重新排序 将删除的节点去除
    "name": {
       "index": "index",
       "admin": "admin-stop"

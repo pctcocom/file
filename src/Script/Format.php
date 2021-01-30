@@ -27,11 +27,16 @@ class Format{
          ];
 
          $script = [];
+         $_script = Cache::store('config')->get('script');
          $theme = 'theme'.DIRECTORY_SEPARATOR.$this->initialize['template']['theme'].DIRECTORY_SEPARATOR;
+
+
+
          foreach ($config as $k1 => $v1) {
             switch ($k1) {
-               case $k1 == 'index' || $k1 == 'admin':
-                  if (strrchr($config['name'][$k1],'-') != '-stop') {
+               case strstr($k1, '_'):
+                  $k1 = str_replace('_','',$k1);
+                  if (strrchr($k1,'-') != '-stop') {
                      foreach ($v1 as $k2 => $v2) {
                         foreach ($v2[$this->initialize['client']['type']] as $k3 => $v3) {
                            $files = $k2.DIRECTORY_SEPARATOR.$this->initialize['client']['type'].DIRECTORY_SEPARATOR.'compress'.DIRECTORY_SEPARATOR.$v3;
@@ -49,8 +54,11 @@ class Format{
                            }
                         }
                         $script[$k1][$k2] =
-                        $this->compression($index[$k2],$root.$path,md5($this->initialize['client']['type'].$config['name'][$k1]).'.'.$k2);
+                        $this->compression($index[$k2],$root.$path,md5($this->initialize['client']['type'].$k1).'.'.$k2);
                      }
+                  }else{
+                     $new_k1 = str_replace('-stop','',$k1);
+                     $script[$new_k1] = $_script[$new_k1];
                   }
                   break;
                case 'library':
@@ -61,7 +69,7 @@ class Format{
                      foreach ($bank as $name => $version) {
                         if (is_array($version)) {
                            foreach ($version as $kv => $vv) {
-                              if (strrchr($vv,'-') != '-stop' || $config['cache']) {
+                              if ((strrchr($vv,'-') != '-stop' && $config['cache']) || $config['sorting']) {
                                  $vv = str_replace('-stop','',$vv);
                                  $fileName = $name.'-'.$vv;
                                  $relative = DIRECTORY_SEPARATOR.'library'.DIRECTORY_SEPARATOR.$types.DIRECTORY_SEPARATOR.$name.DIRECTORY_SEPARATOR.$vv.DIRECTORY_SEPARATOR;
@@ -75,7 +83,7 @@ class Format{
                               }
                            }
                         }else{
-                           if (strrchr($version,'-') != '-stop' || $config['cache']) {
+                           if ((strrchr($version,'-') != '-stop' && $config['cache']) || $config['sorting']) {
                               $version = str_replace('-stop','',$version);
                               $fileName = $name.'-'.$version;
                               $relative = DIRECTORY_SEPARATOR.'library'.DIRECTORY_SEPARATOR.$types.DIRECTORY_SEPARATOR.$name.DIRECTORY_SEPARATOR.$version.DIRECTORY_SEPARATOR;
@@ -90,11 +98,25 @@ class Format{
                         }
                      }
                   }
-                  foreach ($arr as $nv => $t) {
-                     foreach ($t as $suffix => $array) {
-                        $script[$k1][$nv][$suffix] = $this->compression($array,$root.$path,md5($nv).'.'.$suffix);
+
+                  if ($config['sorting']) {
+                     foreach ($arr as $nv => $t) {
+                        foreach ($t as $suffix => $array) {
+                           $script[$k1][$nv][$suffix] = $this->compression($array,$root.$path,md5($nv).'.'.$suffix);
+                        }
                      }
+                  }else{
+                     foreach ($arr as $nv => $t) {
+                        foreach ($t as $suffix => $array) {
+                           $_script[$k1][$nv][$suffix] = $this->compression($array,$root.$path,md5($nv).'.'.$suffix);
+                        }
+                     }
+                     $script['library'] = $_script['library'];
                   }
+
+                  break;
+               case 'library-stop':
+                  $script['library'] = $_script['library'];
                   break;
             }
          }
