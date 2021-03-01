@@ -63,6 +63,7 @@ class Format{
                   break;
                case 'library':
                   $arr = [];
+
                   foreach ($v1 as $types => $bank) {
                      $i = 0;
                      $c = count($bank);
@@ -117,9 +118,37 @@ class Format{
                   break;
                case 'library-stop':
                   $script['library'] = $_script['library'];
+                  $script['volist']['library'] = $_script['volist']['library'];
                   break;
             }
          }
+
+
+         $script['volist']['library'] = $script['volist']['min'] = [];
+         if ($config['min']['status'] === true) {
+            $minJs = $minCss = [];
+            foreach ($script['library'] as $library) {
+               if (!empty($library['js'])) {
+                  $script['volist']['library']['js'][] = $library['js'];
+                  $minJs[] = str_replace('/static','',substr($library['js'],0,strpos($library['js'], '?')));
+               }
+               if (!empty($library['css'])) {
+                  $script['volist']['library']['css'][] = $library['css'];
+                  $minCss[] = str_replace('/static','',substr($library['css'],0,strpos($library['css'], '?')));
+               }
+            }
+            if (!empty($minJs)) {
+               $script['volist']['min']['js'][] = $this->compression($minJs,$root.$path.DIRECTORY_SEPARATOR,$config['min']['js'].'.js');
+            }
+            if (!empty($minCss)) {
+               $script['volist']['min']['css'][] = $this->compression($minCss,$root.$path.DIRECTORY_SEPARATOR,$config['min']['css'].'.css');
+            }
+         }else{
+            $script['volist'] = $_script['volist'];
+         }
+
+         $script['config'] = $config;
+
          if ($config['cache']) {
             Cache::store('config')->set('script',$script);
          }else{

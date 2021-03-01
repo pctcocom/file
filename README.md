@@ -7,6 +7,11 @@
 {
    "cache" : true, // 重新生成所有脚本文件
    "sorting" : true, // 重新排序 将删除的节点去除
+   "min": {
+      "status" : false, // 是否把全部文件压缩在一起
+      "css": "mycss", // css name
+      "js": "myjs" // js name
+   },
    "name": {
       "index": "index",
       "admin": "admin-stop"
