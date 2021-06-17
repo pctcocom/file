@@ -30,8 +30,6 @@ class Format{
          $_script = Cache::store('config')->get('script');
          $theme = 'theme'.DIRECTORY_SEPARATOR.$this->initialize['template']['theme'].DIRECTORY_SEPARATOR;
 
-
-
          foreach ($config as $k1 => $v1) {
             switch ($k1) {
                case strstr($k1, '_'):
@@ -99,7 +97,6 @@ class Format{
                         }
                      }
                   }
-
                   if ($config['sorting']) {
                      foreach ($arr as $nv => $t) {
                         foreach ($t as $suffix => $array) {
@@ -126,23 +123,26 @@ class Format{
 
          $script['volist']['library'] = $script['volist']['min'] = [];
          if ($config['min']['status'] === true) {
-            $minJs = $minCss = [];
-            foreach ($script['library'] as $library) {
-               if (!empty($library['js'])) {
-                  $script['volist']['library']['js'][] = $library['js'];
-                  $minJs[] = str_replace('/static','',substr($library['js'],0,strpos($library['js'], '?')));
+            if (!empty($script['library'])) {
+               $minJs = $minCss = [];
+               foreach ($script['library'] as $library) {
+                  if (!empty($library['js'])) {
+                     $script['volist']['library']['js'][] = $library['js'];
+                     $minJs[] = str_replace('/static','',substr($library['js'],0,strpos($library['js'], '?')));
+                  }
+                  if (!empty($library['css'])) {
+                     $script['volist']['library']['css'][] = $library['css'];
+                     $minCss[] = str_replace('/static','',substr($library['css'],0,strpos($library['css'], '?')));
+                  }
                }
-               if (!empty($library['css'])) {
-                  $script['volist']['library']['css'][] = $library['css'];
-                  $minCss[] = str_replace('/static','',substr($library['css'],0,strpos($library['css'], '?')));
+               if (!empty($minJs)) {
+                  $script['volist']['min']['js'][] = $this->compression($minJs,$root.$path.DIRECTORY_SEPARATOR,$config['min']['js'].'.js');
+               }
+               if (!empty($minCss)) {
+                  $script['volist']['min']['css'][] = $this->compression($minCss,$root.$path.DIRECTORY_SEPARATOR,$config['min']['css'].'.css');
                }
             }
-            if (!empty($minJs)) {
-               $script['volist']['min']['js'][] = $this->compression($minJs,$root.$path.DIRECTORY_SEPARATOR,$config['min']['js'].'.js');
-            }
-            if (!empty($minCss)) {
-               $script['volist']['min']['css'][] = $this->compression($minCss,$root.$path.DIRECTORY_SEPARATOR,$config['min']['css'].'.css');
-            }
+
          }else{
             $script['volist'] = $_script['volist'];
          }
