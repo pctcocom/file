@@ -344,7 +344,6 @@ class Markdown
                     ),
                 ),
             );
-
             return $Block;
         }
     }
@@ -464,7 +463,6 @@ class Markdown
                     'text' => $Element,
                 ),
             );
-
             return $Block;
         }
     }
@@ -492,7 +490,8 @@ class Markdown
             return $Block;
         }
 
-        $Block['element']['text']['text'] .= "\n".$Line['body'];
+        // 将pre code 中的html代码编译
+        $Block['element']['text']['text'] .= "\n".htmlspecialchars($Line['body']);
 
         return $Block;
     }
