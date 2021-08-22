@@ -288,7 +288,7 @@ class Markdown
 
         unset($Blocks[0]);
 
-        # ~
+        # ~  ``
 
         $markup = '';
 
@@ -298,7 +298,6 @@ class Markdown
             {
                 continue;
             }
-
             $markup .= "\n";
             $markup .= isset($Block['markup']) ? $Block['markup'] : $this->element($Block['element']);
         }
@@ -344,6 +343,7 @@ class Markdown
                     ),
                 ),
             );
+
             return $Block;
         }
     }
@@ -1021,11 +1021,10 @@ class Markdown
         $Block = array(
             'element' => array(
                 'name' => 'p',
-                'text' => $Line['text'],
+                'text' => htmlspecialchars($Line['text']),
                 'handler' => 'line',
             ),
         );
-
         return $Block;
     }
 
