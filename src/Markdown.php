@@ -1,5 +1,6 @@
 <?php
 namespace Pctco\File;
+use League\HTMLToMarkdown\HtmlConverter;
 #
 #
 # Parsedown
@@ -21,6 +22,22 @@ namespace Pctco\File;
 
 class Markdown
 {
+    public function __construct($config = []){
+        $config = array_merge([
+            'terminal'  =>  [
+                'status'  =>  false,
+                'html'  =>  'MacOS.html'
+            ],
+        ],$config);
+
+        if ($config['terminal']['status']) {
+            $file = new \Naucon\File\FileWriter(\think\facade\Config::get('initialize.resources.path.load-template').DIRECTORY_SEPARATOR.'terminal'.DIRECTORY_SEPARATOR.$config['terminal']['html'], 'r', true);
+
+            $config['terminal']['html'] = $file->read();
+        }
+
+        $this->config = (Object)$config;
+    }
     # ~
 
     const version = '1.7.4';
@@ -48,6 +65,15 @@ class Markdown
         $markup = trim($markup, "\n");
 
         return $markup;
+    }
+    
+    /** 
+     ** html 自己新增
+     *? @date 21/11/25 17:09
+    */
+    function html($html){
+        $converter = new HtmlConverter();
+        return $converter->convert($html);
     }
 
     #
@@ -477,7 +503,7 @@ class Markdown
         if (isset($Block['interrupted']))
         {
             $Block['element']['text']['text'] .= "\n";
-
+            
             unset($Block['interrupted']);
         }
 
@@ -505,9 +531,11 @@ class Markdown
         return $Block;
     }
 
-    #
-    # Header
-
+    
+    /** 
+     ** header h1 h2 h3 h4 h5 h6
+     *? @date 21/11/25 17:19
+    */
     protected function blockHeader($Line)
     {
         if (isset($Line['text'][1]))
@@ -538,9 +566,10 @@ class Markdown
         }
     }
 
-    #
-    # List
-
+    /** 
+     ** list ul li
+     *? @date 21/11/25 17:20
+    */
     protected function blockList($Line)
     {
         list($name, $pattern) = $Line['text'][0] <= '-' ? array('ul', '[*+-]') : array('ol', '[0-9]+[.]');
@@ -1015,7 +1044,7 @@ class Markdown
     #
     # ~
     #
-
+    
     protected function paragraph($Line)
     {
         $Block = array(
@@ -1025,6 +1054,7 @@ class Markdown
                 'handler' => 'line',
             ),
         );
+        
         return $Block;
     }
 
@@ -1467,10 +1497,11 @@ class Markdown
         return $text;
     }
 
-    #
-    # Handlers
-    #
-
+ 
+    /** 
+     ** Handlers 处理程序  (组合html标签)
+     *? @date 21/11/25 17:32
+    */
     protected function element(array $Element)
     {
         if ($this->safeMode)
@@ -1479,7 +1510,7 @@ class Markdown
         }
 
         $markup = '<'.$Element['name'];
-
+        
         if (isset($Element['attributes']))
         {
             foreach ($Element['attributes'] as $name => $value)
@@ -1488,7 +1519,6 @@ class Markdown
                 {
                     continue;
                 }
-
                 $markup .= ' '.$name.'="'.self::escape($value).'"';
             }
         }
@@ -1529,8 +1559,14 @@ class Markdown
             {
                 $markup .= $text;
             }
-
+            
             $markup .= '</'.$Element['name'].'>';
+
+            if ($this->config->terminal['status']) {
+                if ($Element['name'] === 'pre') {
+                    $markup = str_replace('<pre><code>{$code}</code></pre>',$markup,$this->config->terminal['html']);
+                }
+            }
         }
         else
         {
@@ -1713,4 +1749,9 @@ class Markdown
                    'var', 'span',
                    'wbr', 'time',
     );
+
+
+
+    
+
 }
