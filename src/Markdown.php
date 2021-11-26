@@ -1,5 +1,6 @@
 <?php
 namespace Pctco\File;
+use Pctco\File\Tools;
 use League\HTMLToMarkdown\HtmlConverter;
 use think\facade\Config;
 #
@@ -23,18 +24,19 @@ use think\facade\Config;
 
 class Markdown
 {
+    
     public function __construct($config = []){
         $config = array_merge([
             'terminal'  =>  [
                 'status'  =>  false,
-                'html'  =>  'MacOS.html'
+                'template'  =>  'MacOS'
             ],
         ],$config);
 
-        if ($config['terminal']['status']) {
-            $file = new \Naucon\File\FileWriter(Config::get('initialize.resources.path.load-template').DIRECTORY_SEPARATOR.'terminal'.DIRECTORY_SEPARATOR.$config['terminal']['html'], 'r', true);
+        $this->tools = new Tools();
 
-            $config['terminal']['html'] = $file->read();
+        if ($config['terminal']['status']) {
+            $config['terminal']['template'] = $this->tools->LoadTemplate('terminal',$config['terminal']['template']);
         }
         
         $this->config = (Object)$config;
@@ -1566,7 +1568,7 @@ class Markdown
 
             if ($this->config->terminal['status']) {
                 if ($Element['name'] === 'pre') {
-                    $markup = str_replace('<pre><code>{$code}</code></pre>',$markup,$this->config->terminal['html']);
+                    $markup = str_replace('<pre><code>{$code}</code></pre>',$markup,$this->config->terminal['template']);
                 }
             }
         }
