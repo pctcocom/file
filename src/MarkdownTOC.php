@@ -1,6 +1,7 @@
 <?php
 
 namespace Pctco\File;
+use Pctco\File\Markdown as DynamicParent;
 /**
  * ToC Extension/Plugin for Parsedown.
  * ============================================================================
@@ -18,17 +19,17 @@ namespace Pctco\File;
 //   - Feature Implementation from Issue #13 by @qwertygc
 //     https://github.com/KEINOS/parsedown-extension_table-of-contents/issues/13
 
-if (class_exists('ParsedownExtra')) {
+// if (class_exists('ParsedownExtra')) {
     
-} else {
-    class DynamicParent extends \Pctco\File\Markdown
-    {
-        // public function __construct()
-        // {
-        //     //
-        // }
-    }
-}
+// } else {
+//     class DynamicParent extends \Pctco\File\Markdown
+//     {
+//         public function __construct()
+//         {
+//             //
+//         }
+//     }
+// }
 
 // Old version compatibility (Deprecated since v1.1.0 and will be removed in v1.2.0)
 /*
@@ -52,8 +53,7 @@ class MarkdownTOC extends DynamicParent
     /**
      * Version requirement check.
      */
-    public function __construct()
-    {
+    // public function __construct(){
         // if (version_compare(\Parsedown::version, self::VERSION_PARSEDOWN_REQUIRED) < 0) {
         //     $msg_error  = 'Version Error.' . PHP_EOL;
         //     $msg_error .= '  Parsedown ToC Extension requires a later version of Parsedown.' . PHP_EOL;
@@ -62,8 +62,8 @@ class MarkdownTOC extends DynamicParent
         //     throw new Exception($msg_error);
         // }
 
-        parent::__construct();
-    }
+        // parent::__construct();
+    // }
 
     /**
      * ------------------------------------------------------------------------

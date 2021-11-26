@@ -1,6 +1,7 @@
 <?php
 namespace Pctco\File;
 use League\HTMLToMarkdown\HtmlConverter;
+use think\facade\Config;
 #
 #
 # Parsedown
@@ -31,13 +32,14 @@ class Markdown
         ],$config);
 
         if ($config['terminal']['status']) {
-            $file = new \Naucon\File\FileWriter(\think\facade\Config::get('initialize.resources.path.load-template').DIRECTORY_SEPARATOR.'terminal'.DIRECTORY_SEPARATOR.$config['terminal']['html'], 'r', true);
+            $file = new \Naucon\File\FileWriter(Config::get('initialize.resources.path.load-template').DIRECTORY_SEPARATOR.'terminal'.DIRECTORY_SEPARATOR.$config['terminal']['html'], 'r', true);
 
             $config['terminal']['html'] = $file->read();
         }
-
+        
         $this->config = (Object)$config;
     }
+
     # ~
 
     const version = '1.7.4';
