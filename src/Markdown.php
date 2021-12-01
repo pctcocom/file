@@ -566,6 +566,42 @@ class Markdown
                 ),
             );
 
+            // return $Block;
+
+            /** 
+             ** TOC
+             *? @date 21/12/01 16:04
+            */
+            // Get the text of the heading
+            if (isset($Block['element']['handler']['argument'])) {
+                // Compatibility with old Parsedown Version
+                $text = $Block['element']['handler']['argument'];
+            }
+            if (isset($Block['element']['text'])) {
+                // Current Parsedown
+                $text = $Block['element']['text'];
+            }
+
+            // Get the heading level. Levels are h1, h2, ..., h6
+            $level = $Block['element']['name'];
+
+            // Get the anchor of the heading to link from the ToC list
+            $id = isset($Block['element']['attributes']['id']) ?
+                $Block['element']['attributes']['id'] : $this->createAnchorID($text);
+
+            // Set attributes to head tags
+            $Block['element']['attributes'] = array(
+                'id'   => $id,
+                'name' => $id,
+            );
+
+            // Add/stores the heading element info to the ToC list
+            $this->setContentsList(array(
+                'text'  => $text,
+                'id'    => $id,
+                'level' => $level
+            ));
+
             return $Block;
         }
     }
@@ -1753,6 +1789,204 @@ class Markdown
                    'var', 'span',
                    'wbr', 'time',
     );
+
+
+
+
+    /** 
+     ** TOC 处理
+     *? @date 21/12/01 16:14
+    */
+    protected $firstHeadLevel = 0;
+    protected $contentsListString = '';
+    const TAG_TOC_DEFAULT = '[toc]';
+    /** 
+     ** 将给定的 Markdown 字符串解析为 HTML 字符串，但它会离开 ToC
+     *? @date 21/12/01 16:32
+     *  @param string $text  要解析的 Markdown 字符串。
+     *! @return string        解析的 HTML 字符串。
+     */
+    public function body($text){
+        $text = $this->encodeTagToHash($text);   // Escapes ToC tag temporary
+        $html = $this->text($text);      // Parses the markdown text
+        $html = $this->decodeTagFromHash($html); // Unescape the ToC tag
+
+        return $html;
+    }
+    /** 
+     ** This is used to avoid parsing user defined ToC tag which includes "_" in
+     ** 这用于避免解析包含“_”的用户定义的 ToC 标签
+     ** 他们的标签，例如“[[_toc_]]”。 除非它会被解析为：
+     ** "<p>[[<em>TOC</em>]]</p>"
+     *? @date 21/12/01 16:31
+     *  @param string $text
+     *! @return string
+     */
+    protected function decodeTagFromHash($text){
+        $salt = $this->getSalt();
+        $tag_origin = $this->getTagToC();
+        $tag_hashed = hash('sha256', $salt . $tag_origin);
+
+        if (strpos($text, $tag_hashed) === false) {
+            return $text;
+        }
+
+        return str_replace($tag_hashed, $tag_origin, $text);
+    }
+    /** 
+     ** 将 ToC 标签编码为散列标签并替换。
+     ** 这用于避免解析包含“_”的用户定义的 ToC 标签
+     ** 他们的标签，例如“[[_toc_]]”。 除非它会被解析为：
+     ** "<p>[[<em>TOC</em>]]</p>"
+     *? @date 21/12/01 16:29
+     *  @param string $text
+     *! @return string
+     */
+    protected function encodeTagToHash($text){
+        $salt = $this->getSalt();
+        $tag_origin = $this->getTagToC();
+
+        if (strpos($text, $tag_origin) === false) {
+            return $text;
+        }
+
+        $tag_hashed = hash('sha256', $salt . $tag_origin);
+
+        return str_replace($tag_origin, $tag_hashed, $text);
+    }
+
+    /** 
+     ** 获取 ToC 的markdown标签。
+     *? @date 21/12/01 16:28
+     *! @return string
+     */
+    protected function getTagToC(){
+        if (isset($this->tag_toc) && ! empty($this->tag_toc)) {
+            return $this->tag_toc;
+        }
+
+        return self::TAG_TOC_DEFAULT;
+    }
+    /** 
+     ** 用作salt值的唯一字符串。
+     *? @date 21/12/01 16:27
+     *! @return string
+     */
+    protected function getSalt(){
+        static $salt;
+        if (isset($salt)) {
+            return $salt;
+        }
+
+        $salt = hash('md5', time());
+        return $salt;
+    }
+    /** 
+     ** 返回解析后的 ToC。
+     ** 如果 arg 是“字符串”，则它以 HTML 字符串形式返回 ToC。
+     *? @date 21/12/01 16:23
+     *  @param $type_return  返回格式的类型。 “字符串”或“json”。
+     *! @return string  ToC 的 HTML/JSON 字符串。
+    */
+    public function contentsList($type_return = 'string'){
+        if ('string' === strtolower($type_return)) {
+            $result = '';
+            if (! empty($this->contentsListString)) {
+                // Parses the ToC list in markdown to HTML
+                $result = $this->body($this->contentsListString);
+            }
+            return $result;
+        }
+
+        if ('json' === strtolower($type_return)) {
+            return json_encode($this->contentsListArray);
+        }
+
+        // Forces to return ToC as "string"
+        error_log(
+            'Unknown return type given while parsing ToC.'
+            . ' At: ' . __FUNCTION__ . '() '
+            . ' in Line:' . __LINE__ . ' (Using default type)'
+        );
+        return $this->contentsList('string');
+    }
+    /** 
+     ** 
+     *? @date 21/12/01 16:21
+     *  @param array $Content  Heading info such as "level","id" and "text".
+     *  return myParam2 Explain the meaning of the parameter...
+     *! @return void
+    */
+    protected function setContentsListAsString(array $Content){
+        $text  = $this->fetchText($Content['text']);
+        $id    = $Content['id'];
+        $level = (integer) trim($Content['level'], 'h');
+        $link  = "[${text}](#${id})";
+
+        if ($this->firstHeadLevel === 0) {
+            $this->firstHeadLevel = $level;
+        }
+        $cutIndent = $this->firstHeadLevel - 1;
+        if ($cutIndent > $level) {
+            $level = 1;
+        } else {
+            $level = $level - $cutIndent;
+        }
+
+        $indent = str_repeat('  ', $level);
+
+        // Stores in markdown list format as below:
+        // - [Header1](#Header1)
+        //   - [Header2-1](#Header2-1)
+        //     - [Header3](#Header3)
+        //   - [Header2-2](#Header2-2)
+        // ...
+        $this->contentsListString .= "${indent}- ${link}" . PHP_EOL;
+    }
+    /** 
+     ** 以字符串和数组格式将标题块设置/存储到 ToC 列表。
+     *? @date 21/12/01 16:20
+     *  @param array $Content   Heading info such as "level","id" and "text".
+     *! @return void
+    */
+    protected function setContentsList(array $Content){
+        // Stores as an array
+        $this->setContentsListAsArray($Content);
+        // Stores as string in markdown list format.
+        $this->setContentsListAsString($Content);
+    }
+    /** 
+     ** 将标题块信息设置/存储为数组。
+     *? @date 21/12/01 16:19
+     *  @param array $Content
+     *! @return void
+    */
+    protected function setContentsListAsArray(array $Content)
+    {
+        $this->contentsListArray[] = $Content;
+    }
+    /** 
+     ** 生成可链接的锚文本，即使标题不在 * ASCII。
+     *? @date 21/12/01 16:18
+     *  @param string $text
+     *! @return string
+    */
+    protected function createAnchorID($text){
+        return  urlencode($this->fetchText($text));
+    }
+    /** 
+     ** 仅获取 Markdown 字符串中的文本。
+     ** 解析为 HTML 一次，然后修剪标签以获取文本。
+     *? @date 21/12/01 16:17
+     *  @param string $text  Markdown text.
+     *! @return string
+    */
+    protected function fetchText($text){
+        return trim(strip_tags($this->line($text)));
+    }
+
+
+
 
 
 
