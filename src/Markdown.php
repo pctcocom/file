@@ -31,6 +31,9 @@ class Markdown
                 'status'  =>  false,
                 'template'  =>  'MacOS'
             ],
+            'model'  =>  [
+                'status'  =>  false
+            ],
         ],$config);
 
         $this->tools = new Tools();
@@ -156,7 +159,7 @@ class Markdown
         '7' => array('List'),
         '8' => array('List'),
         '9' => array('List'),
-        ':' => array('Table'),
+        ':' => array('Table','Model'),
         '<' => array('Comment', 'Markup'),
         '=' => array('SetextHeader'),
         '>' => array('Quote'),
@@ -219,6 +222,14 @@ class Markdown
 
             $text = $indent > 0 ? substr($line, $indent) : $line;
 
+
+
+            /** 
+             ** 每行的内容
+             *? @date 21/12/10 16:33
+             *  @param Array $Line
+             */
+
             # ~
 
             $Line = array('body' => $line, 'indent' => $indent, 'text' => $text);
@@ -243,6 +254,13 @@ class Markdown
                     }
                 }
             }
+
+
+            /** 
+             ** 获取行字符串的第一个字符  如 :、#、- ...
+             *? @date 21/12/10 16:36
+             *  @param String $marker
+             */
 
             # ~
 
@@ -358,7 +376,7 @@ class Markdown
         {
             return;
         }
-
+        
         if ($Line['indent'] >= 4)
         {
             $text = substr($Line['body'], 4);
@@ -766,9 +784,17 @@ class Markdown
         }
     }
 
-    #
-    # Rule
-
+    /** 
+     ** hr 线
+     *? @date 21/12/11 14:49
+     *  @param Array $Line ["body" => "-----","indent" => 0,"text" => "-----"]
+     *! @return Array 
+        [
+            "element" => [
+                "name" => "hr"
+            ]
+        ]
+     */
     protected function blockRule($Line)
     {
         if (preg_match('/^(['.$Line['text'][0].'])([ ]*\1){2,}[ ]*$/', $Line['text']))
@@ -778,14 +804,14 @@ class Markdown
                     'name' => 'hr'
                 ),
             );
-
             return $Block;
         }
     }
 
-    #
-    # Setext
-
+    /** 
+     ** 块集文本头
+     *? @date 21/12/11 14:47
+     */
     protected function blockSetextHeader($Line, array $Block = null)
     {
         if ( ! isset($Block) or isset($Block['type']) or isset($Block['interrupted']))
@@ -801,9 +827,10 @@ class Markdown
         }
     }
 
-    #
-    # Markup
-
+    /** 
+     ** 块标记
+     *? @date 21/12/11 14:46
+     */
     protected function blockMarkup($Line)
     {
         if ($this->markupEscaped or $this->safeMode)
@@ -856,6 +883,10 @@ class Markdown
         }
     }
 
+    /** 
+     ** 块标记继续
+     *? @date 21/12/11 14:46
+     */
     protected function blockMarkupContinue($Line, array $Block)
     {
         if (isset($Block['closed']))
@@ -892,9 +923,12 @@ class Markdown
         return $Block;
     }
 
-    #
-    # Reference
-
+    /** 
+     ** 块引用
+     *? @date 21/12/11 14:44
+     *  @param $Line ["body" => "[google](https://google.com)","indent" => 0,"text" => "[google](https://google.com)"]
+     *! @return 
+     */
     protected function blockReference($Line)
     {
         if (preg_match('/^\[(.+?)\]:[ ]*<?(\S+?)>?(?:[ ]+["\'(](.+)["\')])?[ ]*$/', $Line['text'], $matches))
@@ -921,9 +955,14 @@ class Markdown
         }
     }
 
-    #
-    # Table
-
+   
+    /** 
+     ** Table 表格
+     *? @date 21/12/10 16:51
+     *  @param myParam1 Explain the meaning of the parameter...
+     *  @param myParam2 Explain the meaning of the parameter...
+     *! @return 
+     */
     protected function blockTable($Line, array $Block = null)
     {
         if ( ! isset($Block) or isset($Block['type']) or isset($Block['interrupted']))
@@ -1031,6 +1070,32 @@ class Markdown
         }
     }
 
+    /** 
+     ** Model 内容模型
+     *? @date 21/12/10 16:51 (新增功能)
+     *  @param Array $Line ["body" => ":OS=3170473427:","indent" => 0,"text" => ":OS=3170473427:"]
+     *  @param myParam2 Explain the meaning of the parameter...
+     *! @return 
+     */
+    protected function blockModel($Line){
+        preg_match_all('/[:](OS|BOOKS|ARTICLE)[=](\d+)[:]$/',$Line['text'],$arr);
+        if (!empty($arr[1][0]) && !empty($arr[2][0])){
+            $Block = [
+                'element' => [
+                    'name' => 'model',
+                    'type'  =>  $arr[1][0],
+                    'sid'   =>  $arr[2][0]
+                ]
+            ];
+            return $Block;
+        }
+    }
+    /** 
+     ** table
+     *? @date 21/12/11 14:34
+     *  @param Array $Line "body" => "|Text1|","indent" => 0,"text" => "|Text1|"
+     *! @return Array
+     */
     protected function blockTableContinue($Line, array $Block)
     {
         if (isset($Block['interrupted']))
@@ -1081,10 +1146,19 @@ class Markdown
         }
     }
 
-    #
-    # ~
-    #
-    
+    /** 
+     ** 段落 (<p></p>)
+     *? @date 21/12/11 14:32
+     *  @param Array $Line ["body" => "~~abc~~","indent" => 0,"text" => "~~abc~~"]
+     *! @return Array
+        [
+            "element" => array:3 [
+                "name" => "p"
+                "text" => "~~abc~~"
+                "handler" => "line"
+            ]
+        ]
+     */
     protected function paragraph($Line)
     {
         $Block = array(
@@ -1094,14 +1168,14 @@ class Markdown
                 'handler' => 'line',
             ),
         );
-        
         return $Block;
     }
 
-    #
-    # Inline Elements
-    #
-
+ 
+    /** 
+     ** 内联类型
+     *? @date 21/12/11 14:31
+     */
     protected $InlineTypes = array(
         '"' => array('SpecialCharacter'),
         '!' => array('Image'),
@@ -1121,10 +1195,13 @@ class Markdown
 
     protected $inlineMarkerList = '!"*_&[:<>`~\\';
 
-    #
-    # ~
-    #
 
+    /** 
+     ** 每行 markdown 转 html
+     *? @date 21/12/11 14:30
+     *  @param String $text
+     *! @return String
+     */
     public function line($text, $nonNestables=array())
     {
         $markup = '';
@@ -1205,10 +1282,20 @@ class Markdown
         return $markup;
     }
 
-    #
-    # ~
-    #
-
+    /** 
+     ** 内联代码
+     *? @date 21/12/11 14:27
+     *  @param Array $Excerpt ["text" => "`abc`","context" => "`abc`"]
+     *  @param myParam2 Explain the meaning of the parameter...
+     *! @return Array
+        [
+            "extent" => 5
+            "element" => array:2 [
+                "name" => "code"
+                "text" => "abc"
+            ]
+        ]
+     */
     protected function inlineCode($Excerpt)
     {
         $marker = $Excerpt['text'][0];
@@ -1217,7 +1304,6 @@ class Markdown
         {
             $text = $matches[2];
             $text = preg_replace("/[ ]*\n/", ' ', $text);
-
             return array(
                 'extent' => strlen($matches[0]),
                 'element' => array(
@@ -1227,7 +1313,10 @@ class Markdown
             );
         }
     }
-
+    /** 
+     ** 内联电子邮件标签
+     *? @date 21/12/11 14:26
+     */
     protected function inlineEmailTag($Excerpt)
     {
         if (strpos($Excerpt['text'], '>') !== false and preg_match('/^<((mailto:)?\S+?@\S+?)>/i', $Excerpt['text'], $matches))
@@ -1252,6 +1341,32 @@ class Markdown
         }
     }
 
+    /** 
+     ** 内联重点  如 **abc**,*abc*
+     *? @date 21/12/11 14:21
+     *  @param Array $Excerpt 
+     * ["text" => "**abc**","context" => "**abc**"] or ["text" => "*abc*","context" => "*abc*"]
+     *! @return Array
+        // **abc**
+        [
+            "extent" => 7
+            "element" => array:3 [
+                "name" => "strong"
+                "handler" => "line"
+                "text" => "abc"
+            ]
+        ]
+
+        // *abc*
+        [
+            "extent" => 5
+            "element" => array:3 [
+                "name" => "em"
+                "handler" => "line"
+                "text" => "abc"
+            ]
+        ]
+     */
     protected function inlineEmphasis($Excerpt)
     {
         if ( ! isset($Excerpt['text'][1]))
@@ -1273,7 +1388,6 @@ class Markdown
         {
             return;
         }
-
         return array(
             'extent' => strlen($matches[0]),
             'element' => array(
@@ -1283,7 +1397,12 @@ class Markdown
             ),
         );
     }
-
+    /** 
+     ** 内联转义序列
+     *? @date 21/12/11 14:20
+     *  @param Array $Excerpt ["text" => "\abc","context" => "\abc"]
+     *! @return 
+     */
     protected function inlineEscapeSequence($Excerpt)
     {
         if (isset($Excerpt['text'][1]) and in_array($Excerpt['text'][1], $this->specialCharacters))
@@ -1295,6 +1414,24 @@ class Markdown
         }
     }
 
+    /** 
+     ** 内联图像
+     *? @date 21/12/11 14:17
+     *  @param Array $Excerpt
+     *  ["text" => "![7.png](https://storage.com/7.png)","context" => "![7.png](https://storage.com/7.png)"]
+     *! @return Array
+        [
+            "extent" => 131
+            "element" => array:2 [
+                "name" => "img"
+                "attributes" => array:3 [
+                "src" => "https://storage.com/7.png"
+                "alt" => "7.png"
+                "title" => null
+                ]
+            ]
+        ]
+     */
     protected function inlineImage($Excerpt)
     {
         if ( ! isset($Excerpt['text'][1]) or $Excerpt['text'][1] !== '[')
@@ -1328,7 +1465,29 @@ class Markdown
 
         return $Inline;
     }
-
+    /** 
+     ** 内联链接
+     *? @date 21/12/11 14:14
+     *  @param Array 
+     *  $Excerpt ["text" => "[pctco](https://pctco.com)","context" => "[pctco](https://pctco.com)"]
+     *! @return Array
+        [
+            "extent" => 48
+            "element" => array:5 [
+                "name" => "a"
+                "handler" => "line"
+                "nonNestables" => array:2 [
+                    0 => "Url"
+                    1 => "Link"
+                ]
+                "text" => "pctco"
+                "attributes" => array:2 [
+                "href" => "https://google.com"
+                "title" => null
+                ]
+            ]
+        ]
+     */
     protected function inlineLink($Excerpt)
     {
         $Element = array(
@@ -1394,7 +1553,6 @@ class Markdown
             $Element['attributes']['href'] = $Definition['url'];
             $Element['attributes']['title'] = $Definition['title'];
         }
-
         return array(
             'extent' => $extent,
             'element' => $Element,
@@ -1433,6 +1591,10 @@ class Markdown
         }
     }
 
+    /** 
+     ** 内联特殊字符
+     *? @date 21/12/11 14:13
+     */
     protected function inlineSpecialCharacter($Excerpt)
     {
         if ($Excerpt['text'][0] === '&' and ! preg_match('/^&#?\w+;/', $Excerpt['text']))
@@ -1454,6 +1616,20 @@ class Markdown
         }
     }
 
+    /** 
+     ** 内联删除线
+     *? @date 21/12/11 14:09
+     *  @param Array $Excerpt ["text" => "~~abc~~" "context" => "~~abc~~"]
+     *  @param myParam2 Explain the meaning of the parameter...
+     *! @return Array 
+        [
+            "extent" => 7
+            "element" => array:3 [
+                "name" => "del"
+                "text" => "abc"
+                "handler" => "line"
+        ]
+     */
     protected function inlineStrikethrough($Excerpt)
     {
         if ( ! isset($Excerpt['text'][1]))
@@ -1474,6 +1650,11 @@ class Markdown
         }
     }
 
+    /** 
+     ** 内联网址
+     *? @date 21/12/11 14:08
+     *  @param Array $Excerpt ["text" => ":" "context" => ":OS=3170473427:"]
+     */
     protected function inlineUrl($Excerpt)
     {
         if ($this->urlsLinked !== true or ! isset($Excerpt['text'][2]) or $Excerpt['text'][2] !== '/')
@@ -1496,11 +1677,14 @@ class Markdown
                     ),
                 ),
             );
-
             return $Inline;
         }
     }
 
+    /** 
+     ** 内联网址标签
+     *? @date 21/12/11 14:06 
+     */
     protected function inlineUrlTag($Excerpt)
     {
         if (strpos($Excerpt['text'], '>') !== false and preg_match('/^<(\w+:\/{2}[^ >]+)>/i', $Excerpt['text'], $matches))
@@ -1520,8 +1704,12 @@ class Markdown
         }
     }
 
-    # ~
-
+    /** 
+     ** 未标记的文本
+     *? @date 21/12/11 14:05
+     *  @param String $text
+     *! @return String
+     */
     protected function unmarkedText($text)
     {
         if ($this->breaksEnabled)
@@ -1533,7 +1721,6 @@ class Markdown
             $text = preg_replace('/(?:[ ][ ]+|[ ]*\\\\)\n/', "<br />\n", $text);
             $text = str_replace(" \n", "\n", $text);
         }
-
         return $text;
     }
 
@@ -1544,74 +1731,101 @@ class Markdown
     */
     protected function element(array $Element)
     {
-        if ($this->safeMode)
-        {
-            $Element = $this->sanitiseElement($Element);
-        }
+        if ($Element['name'] === 'model') {
+            $markup = '';
+            if ($this->config->model['status'] === true) {
+                /** 
+                 ** 内容模型处理
+                *? @date 21/12/11 18:07
+                */
+                $file = new \Naucon\File\FileWriter(Config::get('initialize.resources.path.load-template').DIRECTORY_SEPARATOR.'model'.DIRECTORY_SEPARATOR.''.$Element['type'].'.html', 'r', true);
+                $markup = '<div class="model">'.$Element['type'].$Element['sid'].'</div>';
 
-        $markup = '<'.$Element['name'];
-        
-        if (isset($Element['attributes']))
-        {
-            foreach ($Element['attributes'] as $name => $value)
-            {
-                if ($value === null)
+                if ($Element['type'] === 'OS') {
+                    $model = new \app\model\Os;
+                }
+                if ($Element['type'] === 'BOOKS') {
+                    $model = new \app\model\Books;
+                }
+                if ($Element['type'] === 'ARTICLE') {
+                    $model = new \app\model\Article;
+                }
+
+                
+
+                if ($Element['type'] === 'OS' || $Element['type'] === 'BOOKS' || $Element['type'] === 'ARTICLE') {
+                    $replace = $model->editor([
+                        'submit'    =>  'markdown-extensions-ModelID',
+                        'sid'   =>  $Element['sid']
+                    ]); 
+                    $markup = 
+                    str_replace(array_keys($replace),array_values($replace),$file->read());
+                }
+            }
+        }else{
+            if ($this->safeMode){
+                $Element = $this->sanitiseElement($Element);
+            }
+    
+            $markup = '<'.$Element['name'];
+            if (isset($Element['attributes'])){
+                foreach ($Element['attributes'] as $name => $value)
                 {
-                    continue;
-                }
-                $markup .= ' '.$name.'="'.self::escape($value).'"';
-            }
-        }
-
-        $permitRawHtml = false;
-
-        if (isset($Element['text']))
-        {
-            $text = $Element['text'];
-        }
-        // very strongly consider an alternative if you're writing an
-        // extension
-        elseif (isset($Element['rawHtml']))
-        {
-            $text = $Element['rawHtml'];
-            $allowRawHtmlInSafeMode = isset($Element['allowRawHtmlInSafeMode']) && $Element['allowRawHtmlInSafeMode'];
-            $permitRawHtml = !$this->safeMode || $allowRawHtmlInSafeMode;
-        }
-
-        if (isset($text))
-        {
-            $markup .= '>';
-
-            if (!isset($Element['nonNestables']))
-            {
-                $Element['nonNestables'] = array();
-            }
-
-            if (isset($Element['handler']))
-            {
-                $markup .= $this->{$Element['handler']}($text, $Element['nonNestables']);
-            }
-            elseif (!$permitRawHtml)
-            {
-                $markup .= self::escape($text, true);
-            }
-            else
-            {
-                $markup .= $text;
-            }
-            
-            $markup .= '</'.$Element['name'].'>';
-
-            if ($this->config->terminal['status']) {
-                if ($Element['name'] === 'pre') {
-                    $markup = str_replace('<pre><code>{$code}</code></pre>',$markup,$this->config->terminal['template']);
+                    if ($value === null)
+                    {
+                        continue;
+                    }
+                    $markup .= ' '.$name.'="'.self::escape($value).'"';
                 }
             }
+    
+            $permitRawHtml = false;
+    
+            if (isset($Element['text'])){
+                $text = $Element['text'];
+            }
+            // very strongly consider an alternative if you're writing an
+            // extension
+            elseif (isset($Element['rawHtml'])){
+                $text = $Element['rawHtml'];
+                
+                $allowRawHtmlInSafeMode = isset($Element['allowRawHtmlInSafeMode']) && $Element['allowRawHtmlInSafeMode'];
+                $permitRawHtml = !$this->safeMode || $allowRawHtmlInSafeMode;
+            }
+    
+            if (isset($text)){
+                $markup .= '>';
+    
+                if (!isset($Element['nonNestables']))
+                {
+                    $Element['nonNestables'] = array();
+                }
+    
+                if (isset($Element['handler']))
+                {
+                    $markup .= $this->{$Element['handler']}($text, $Element['nonNestables']);
+                }
+                elseif (!$permitRawHtml)
+                {
+                    $markup .= self::escape($text, true);
+                }
+                else
+                {
+                    $markup .= $text;
+                }
+                
+                $markup .= '</'.$Element['name'].'>';
+    
+                if ($this->config->terminal['status']) {
+                    if ($Element['name'] === 'pre') {
+                        $markup = str_replace('<pre><code>{$code}</code></pre>',$markup,$this->config->terminal['template']);
+                    }
+                }
+            }else{
+                $markup .= ' />';
+            }
         }
-        else
-        {
-            $markup .= ' />';
-        }
+        
 
         return $markup;
     }
@@ -1774,10 +1988,18 @@ class Markdown
 
     protected $regexHtmlAttribute = '[a-zA-Z_:][\w:.-]*(?:\s*=\s*(?:[^"\'=<>`\s]+|"[^"]*"|\'[^\']*\'))?';
 
+    /** 
+     ** 空元素 如：<hr> <br> <img src="...">
+     *? @date 21/12/11 17:34
+     */
     protected $voidElements = array(
         'area', 'base', 'br', 'col', 'command', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source',
     );
 
+    /** 
+     ** 文本级别元素  如： <del>...</del>
+     *? @date 21/12/11 17:36
+     */
     protected $textLevelElements = array(
         'a', 'br', 'bdo', 'abbr', 'blink', 'nextid', 'acronym', 'basefont',
         'b', 'em', 'big', 'cite', 'small', 'spacer', 'listing',
