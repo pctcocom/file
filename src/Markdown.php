@@ -3,6 +3,8 @@ namespace Pctco\File;
 use Pctco\File\Tools;
 use League\HTMLToMarkdown\HtmlConverter;
 use think\facade\Config;
+use Pctco\Coding\Skip32\Skip;
+use QL\QueryList;
 #
 #
 # Parsedown
@@ -51,8 +53,7 @@ class Markdown
 
     # ~
 
-    function text($text)
-    {
+    function text($text) {
         # make sure no definitions are set
         $this->DefinitionData = array();
 
@@ -347,6 +348,7 @@ class Markdown
                 continue;
             }
             $markup .= "\n";
+            
             $markup .= isset($Block['markup']) ? $Block['markup'] : $this->element($Block['element']);
         }
 
@@ -1766,7 +1768,6 @@ class Markdown
             if ($this->safeMode){
                 $Element = $this->sanitiseElement($Element);
             }
-    
             $markup = '<'.$Element['name'];
             if (isset($Element['attributes'])){
                 foreach ($Element['attributes'] as $name => $value)
@@ -2029,10 +2030,9 @@ class Markdown
      *! @return string        解析的 HTML 字符串。
      */
     public function body($text){
-        $text = $this->encodeTagToHash($text);   // Escapes ToC tag temporary
-        $html = $this->text($text);      // Parses the markdown text
-        $html = $this->decodeTagFromHash($html); // Unescape the ToC tag
-
+        $text = $this->encodeTagToHash($text);   // 暂时转义 ToC 标签
+        $html = $this->text($text);      // 解析 markdown 文本
+        $html = $this->decodeTagFromHash($html); // 取消转义 ToC 标签
         return $html;
     }
     /** 
@@ -2140,7 +2140,9 @@ class Markdown
      *! @return void
     */
     protected function setContentsListAsString(array $Content){
+
         $text  = $this->fetchText($Content['text']);
+        
         $id    = $Content['id'];
         $level = (integer) trim($Content['level'], 'h');
         $link  = "[${text}](#${id})";
@@ -2208,10 +2210,49 @@ class Markdown
     }
 
 
+    /** 
+     ** md ul 转 数组
+     *? @date 21/12/27 19:02
+     *  @param myParam1 Explain the meaning of the parameter...
+     *  @param myParam2 Explain the meaning of the parameter...
+     *! @return 
+     */
+    protected $ulToArrayId = 1;
+    protected $ulToArrayPid = 0;
+    public function ulToArray($text) {
+        $g = $this->ulToArrayNode($text);
+        foreach ($g as $k=>$v) {
+            if ($v['html'] !== '') {
+                $this->ulToArrayPid = $v['id'];
+                $s = $this->ulToArrayNode($v['html']);
+                $g = array_merge($g,$s);
+                foreach ($s as $k2=>$v2) {
+                    $this->ulToArrayPid = $v2['id'];
+                    $g = array_merge($g,$this->ulToArray($v2['html']));
+                }
+            }
+        }
+        return $g;
+    }
+    public function ulToArrayNode($text){
+        $rules = [
+            'name' => ['ul:eq(0)>li>a','text'],
+            'LocalNodePath' => ['ul:eq(0)>li>a','href'],
+            'html' => ['ul:eq(0)>li','html','-a:eq(0)']
+        ];
+   
+        $QL = QueryList::html($text)->rules($rules)->query(function($item){
+            $item['id'] = $this->ulToArrayId++;
+            $item['pid'] = $this->ulToArrayPid;
+            return $item;
+        })->getData();
 
-
-
-
-    
-
+        return $QL->all();
+    }
 }
+
+
+
+
+
+
