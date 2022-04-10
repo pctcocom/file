@@ -41,7 +41,7 @@ class Markdown
         $this->tools = new Tools();
 
         if ($config['terminal']['status']) {
-            $config['terminal']['template'] = $this->tools->LoadTemplate('terminal',$config['terminal']['template']);
+            $config['terminal']['template'] = $this->tools->LoadTemplate('ui/terminal',$config['terminal']['template']);
         }
         
         $this->config = (Object)$config;
