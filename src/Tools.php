@@ -1,6 +1,6 @@
 <?php
 namespace Pctco\File;
-use think\facade\Config;
+use think\facade\Cache;
 use Naucon\File\File;
 use Naucon\File\FileWriter;
 class Tools{
@@ -11,7 +11,8 @@ class Tools{
      *? @date 21/11/26 14:42
     */
     public function LoadTemplate($folder,$filename){
-        $file = new FileWriter(Config::get('initialize.resources.path.load-template').DIRECTORY_SEPARATOR.$folder.DIRECTORY_SEPARATOR.$filename.'.html', 'r', true);
+        $initialize = Cache::store('config')->get(md5('app-middleware-configuration'));
+        $file = new FileWriter($initialize['initialize']['resources']['path']['load-template'].DIRECTORY_SEPARATOR.$folder.DIRECTORY_SEPARATOR.$filename.'.html', 'r', true);
 
         return $file->read();
     }

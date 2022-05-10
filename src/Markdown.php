@@ -2,7 +2,7 @@
 namespace Pctco\File;
 use Pctco\File\Tools;
 use League\HTMLToMarkdown\HtmlConverter;
-use think\facade\Config;
+use think\facade\Cache;
 use Pctco\Coding\Skip32\Skip;
 use QL\QueryList;
 #
@@ -1740,7 +1740,8 @@ class Markdown
                  ** 内容模型处理
                 *? @date 21/12/11 18:07
                 */
-                $file = new \Naucon\File\FileWriter(Config::get('initialize.resources.path.load-template').DIRECTORY_SEPARATOR.'model'.DIRECTORY_SEPARATOR.''.$Element['type'].'.html', 'r', true);
+                $initialize = Cache::store('config')->get(md5('app-middleware-configuration'));
+                $file = new \Naucon\File\FileWriter($initialize['initialize']['resources']['path']['load-template'].DIRECTORY_SEPARATOR.'model'.DIRECTORY_SEPARATOR.''.$Element['type'].'.html', 'r', true);
                 $markup = '<div class="model">'.$Element['type'].$Element['sid'].'</div>';
 
                 if ($Element['type'] === 'OS') {
