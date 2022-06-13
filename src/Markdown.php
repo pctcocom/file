@@ -1754,15 +1754,14 @@ class Markdown
                     $model = new \app\model\Article;
                 }
 
-                
-
                 if ($Element['type'] === 'OS' || $Element['type'] === 'BOOKS' || $Element['type'] === 'ARTICLE') {
                     $replace = $model->editor([
                         'submit'    =>  'markdown-extensions-ModelID',
                         'sid'   =>  $Element['sid']
                     ]); 
-                    $markup = 
-                    str_replace(array_keys($replace),array_values($replace),$file->read());
+                    if ($replace !== false) {
+                        $markup = str_replace(array_keys($replace),array_values($replace),$file->read());
+                    }
                 }
             }
         }else{
@@ -2251,9 +2250,3 @@ class Markdown
         return $QL->all();
     }
 }
-
-
-
-
-
-
