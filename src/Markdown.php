@@ -2,9 +2,11 @@
 namespace Pctco\File;
 use Pctco\File\Tools;
 use League\HTMLToMarkdown\HtmlConverter;
+use League\HTMLToMarkdown\Converter\TableConverter;
 use think\facade\Cache;
 use Pctco\Coding\Skip32\Skip;
 use QL\QueryList;
+use Pctco\Types\Arrays;
 #
 #
 # Parsedown
@@ -79,8 +81,27 @@ class Markdown
      ** html 自己新增
      *? @date 21/11/25 17:09
     */
-    function html($html){
+    function html($html,$options = []){
+
+        $options = 
+        Arrays::merge([],[
+            'tags' => [
+                // 是否去除 HTML 标签
+                'strip_tags' => false
+            ],
+            'table' =>  [
+                // div table 转 Markdown tables
+                'converter' =>  false
+            ]
+        ],$options);
+
         $converter = new HtmlConverter();
+        if ($options['table']['converter'] === true) {
+            // div table 转 Markdown tables
+            $converter->getEnvironment()->addConverter(new TableConverter());
+        }
+        // 去除 HTML 标签
+        $converter->getConfig()->setOption('strip_tags', $options['tags']['strip_tags']);
         return $converter->convert($html);
     }
 
