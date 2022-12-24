@@ -2,11 +2,9 @@
 namespace Pctco\File;
 use Pctco\File\Tools;
 use League\HTMLToMarkdown\HtmlConverter;
-use League\HTMLToMarkdown\Converter\TableConverter;
 use think\facade\Cache;
 use Pctco\Coding\Skip32\Skip;
 use QL\QueryList;
-use Pctco\Types\Arrays;
 #
 #
 # Parsedown
@@ -81,27 +79,8 @@ class Markdown
      ** html 自己新增
      *? @date 21/11/25 17:09
     */
-    function html($html,$options = []){
-
-        $options = 
-        Arrays::merge([],[
-            'tags' => [
-                // 是否去除 HTML 标签
-                'strip_tags' => false
-            ],
-            'table' =>  [
-                // div table 转 Markdown tables
-                'converter' =>  false
-            ]
-        ],$options);
-
+    function html($html){
         $converter = new HtmlConverter();
-        if ($options['table']['converter'] === true) {
-            // div table 转 Markdown tables
-            $converter->getEnvironment()->addConverter(new TableConverter());
-        }
-        // 去除 HTML 标签
-        $converter->getConfig()->setOption('strip_tags', $options['tags']['strip_tags']);
         return $converter->convert($html);
     }
 
@@ -245,7 +224,6 @@ class Markdown
             $text = $indent > 0 ? substr($line, $indent) : $line;
 
 
-
             /** 
              ** 每行的内容
              *? @date 21/12/10 16:33
@@ -340,7 +318,7 @@ class Markdown
                 $Blocks []= $CurrentBlock;
 
                 $CurrentBlock = $this->paragraph($Line);
-
+                
                 $CurrentBlock['identified'] = true;
             }
         }
@@ -362,7 +340,7 @@ class Markdown
 
         $markup = '';
 
-        foreach ($Blocks as $Block)
+        foreach ($Blocks as $k=>$Block)
         {
             if (isset($Block['hidden']))
             {
@@ -372,11 +350,10 @@ class Markdown
             
             $markup .= isset($Block['markup']) ? $Block['markup'] : $this->element($Block['element']);
         }
-
+        
         $markup .= "\n";
 
         # ~
-
         return $markup;
     }
 
@@ -1747,13 +1724,44 @@ class Markdown
         return $text;
     }
 
- 
+    /** 
+     ** 处理protected function element递增数处理（pctco）
+     *? @date 22/12/24 21:59
+     */
+    protected $elementIncremental = 0;
+    /** 
+     ** 添加防采集随机字符串
+     *? @date 22/12/24 22:12
+     */
+    protected function preventCollectionOfRandomCharacters($key){
+        $rs = [
+            10  =>  '<b>s</b><b>a</b>n<b>g</b>n</b>i<b>a</b>o<b>.</b><b>c</b><b>o</b>m',
+            58  =>  '桑<i>鸟</i>网',
+            70  =>  '桑鸟s<b>a</b>ngniao.com',
+            93  =>  '<a href="https://www.baidu.com/s?wd=%E8%B5%84%E8%AE%AF-%20%E4%BA%92%E8%81%94%E7%BD%91IT%E6%8A%80%E6%9C%AF%E5%BA%94%E7%94%A8%E8%B5%84%E8%AE%AF%20-%20%E6%A1%91%E9%B8%9F%E7%BD%91">资讯 - 互联网IT技术应用资讯 - 桑鸟网</a>',
+            117  =>  '<a href="https://www.baidu.com/s?wd=%E5%B0%8F%E7%BB%84%20-%20%E7%A8%8B%E5%BA%8F%E5%91%98%E8%AE%A8%E8%AE%BA%E4%BA%92%E5%8A%A8%E9%97%AE%E7%AD%94%E5%B9%B3%E5%8F%B0%20-%20%E6%A1%91%E9%B8%9F%E7%BD%91">小组 - 程序员讨论互动问答平台 - <b>桑</b>鸟网</a>',
+            139 =>  '<a href="https://www.baidu.com/s?wd=%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%20-%20%E7%A8%8B%E5%BA%8F%E5%91%98%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AE%B1%20-%20%E6%A1%91%E9%B8%9F%E7%BD%91">应用程序 - 程序员的软件应用工具箱 - 桑鸟网</a>',
+            155 =>  'https://www.s<b>a</b>ngniao.com/',
+            177 =>  'https://www.sangn<b>i</b>ao.com/'
+        ];
+
+        $ce = [
+            md5('hwn'),md5('awn'),md5('own'),md5('hbn'),md5('opz'),md5('efw'),
+            md5('tan'),md5('c4n'),md5('5fn'),md5('8an'),md5('01z'),md5('81_')
+        ];
+
+        return [
+            'rs'  =>  empty($rs[$key])?'桑鸟网_sangniao.com':$rs[$key],
+            'ce'  =>  $ce[array_rand($ce,1)]
+        ];
+    }
     /** 
      ** Handlers 处理程序  (组合html标签)
      *? @date 21/11/25 17:32
     */
     protected function element(array $Element)
     {
+        $this->elementIncremental++;
         if ($Element['name'] === 'model') {
             $markup = '';
             if ($this->config->model['status'] === true) {
@@ -1789,7 +1797,13 @@ class Markdown
             if ($this->safeMode){
                 $Element = $this->sanitiseElement($Element);
             }
-            $markup = '<'.$Element['name'];
+            /** 
+             ** 新增处理p元素，防止采集（pctco）
+             *? @date 22/12/24 21:59
+             */
+            // $markup = '<'.$Element['name'];
+            $markup = '<'.$Element['name'].' class="ui--'.md5(rand(1,2000)).'"';
+            
             if (isset($Element['attributes'])){
                 foreach ($Element['attributes'] as $name => $value)
                 {
@@ -1837,7 +1851,19 @@ class Markdown
                 }
                 
                 $markup .= '</'.$Element['name'].'>';
-    
+                
+                /** 
+                 ** 新增处理p元素，防止采集（pctco）
+                 *? @date 22/12/24 22:01
+                 */
+                $preventCollectionOfRandomCharactersKey = [10,58,70,93,117,139,155,177];
+                if (in_array($this->elementIncremental,$preventCollectionOfRandomCharactersKey) === true) {
+                    $elementIncrementalId = $preventCollectionOfRandomCharactersKey[rand(0,6)];
+                    $preventCollectionOfRandomCharacters = $this->preventCollectionOfRandomCharacters($elementIncrementalId);
+                    
+                    $markup = $markup.'<p class="ui--'.$preventCollectionOfRandomCharacters['ce'].'">'.$preventCollectionOfRandomCharacters['rs'].'</p>';
+                }
+
                 if ($this->config->terminal['status']) {
                     if ($Element['name'] === 'pre') {
                         $markup = str_replace('<pre><code>{$code}</code></pre>',$markup,$this->config->terminal['template']);
